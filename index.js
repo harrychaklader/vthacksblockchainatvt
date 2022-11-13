@@ -1,4 +1,4 @@
-const { Client, PrivateKey, AccountCreateTransaction, Hbar } = require("@hashgraph/sdk");
+const { Client, PrivateKey, AccountCreateTransaction, Hbar, ContractCreateFlow } = require("@hashgraph/sdk");
 
 require("dotenv").config();
 
@@ -20,21 +20,13 @@ async function main() {
 
     client.setOperator(myAccountId, myPrivateKey);
 
-    //Create new keys
-    const newAccountPrivateKey = PrivateKey.generateED25519(); 
-    const newAccountPublicKey = newAccountPrivateKey.publicKey;
-
-    //Create a new account with 1,000 tinybar starting balance
-    const newAccount = await new AccountCreateTransaction()
-        .setKey(newAccountPublicKey)
-        .setInitialBalance(Hbar.fromTinybars(1000))
-        .execute(client);
-
-    // Get the new account ID
-    const getReceipt = await newAccount.getReceipt(client);
-    const newAccountId = getReceipt.accountId;
-
-    console.log("The new account ID is: " +newAccountId);
+    let contract = require("./RentingContract.json")
+    const bytecode = contract.bytecode.object;
+    const fileCreateTx = new ContractCreateFlow().setBytecode(bytecode).setGas(100000);
+    const submitTx = await fileCreateTx.execute(client);
+    const fileReceipt = await submitTx.getReceipt(client);
+    // const bytecodeFileId = fileReceipt.fileId;
+    console.log(fileReceipt);
 
     console.log('success')
     client.close();
